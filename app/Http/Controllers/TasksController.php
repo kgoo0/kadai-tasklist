@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Task;  
+use App\Models\Task;
+use Illuminate\Support\Facades\Auth;
 
 class TasksController extends Controller
 {
+    
     /**
      * Display a listing of the resource.
      *
@@ -14,14 +16,14 @@ class TasksController extends Controller
      */
     public function index()
     {
-        $tasks = Task::all();
-
+        // 現在ログインしているユーザーのuseridと同じtaskのみ取得する
+        $tasks = Task::where('user_id', Auth::id())->get();
         // タスク一覧ビューでそれを表示
         return view('tasks.index', [
             'tasks' => $tasks,
         ]);
     }
-
+    
     /**
      * Show the form for creating a new resource.
      *
@@ -30,13 +32,12 @@ class TasksController extends Controller
     public function create()
     {
         $task = new Task;
-
         // タスク作成ビューを表示
         return view('tasks.create', [
             'task' => $task,
         ]);
     }
-
+    
     /**
      * Store a newly created resource in storage.
      *
@@ -51,14 +52,14 @@ class TasksController extends Controller
         ]);
         // タスクを作成
         $task = new Task;
+        $task->user_id = Auth::id();
         $task->content = $request->content;
         $task->status = $request->status;
         $task->save();
-
-        // トップページへリダイレクトさせる
-        return redirect('/');
+        // タスク一覧画面へリダイレクトさせる
+        return redirect()->route('tasks.index');
     }
-
+    
     /**
      * Display the specified resource.
      *
@@ -69,13 +70,16 @@ class TasksController extends Controller
     {
         // idの値でタスクを検索して取得
         $task = Task::findOrFail($id);
-
-        // タスク詳細ビューでそれを表示
+        // ログインしているユーザーidとtaskのuseridが一致しない場合、トップページへリダイレクト
+        if (!(Auth::id() === $task->user_id)) {
+            return redirect()->route('tasks.index');
+        }
+        // タスク詳細ビュー表示
         return view('tasks.show', [
             'task' => $task,
         ]);
     }
-
+    
     /**
      * Show the form for editing the specified resource.
      *
@@ -86,8 +90,11 @@ class TasksController extends Controller
     {
         // idの値でメッセージを検索して取得
         $task = Task::findOrFail($id);
-
-        // メッセージ編集ビューでそれを表示
+        // ログインしているユーザーidとtaskのuseridが一致しない場合、トップページへリダイレクト
+        if (!(Auth::id() === $task->user_id)) {
+            return redirect()->route('tasks.index');
+        }
+        // メッセージ編集ビューを表示
         return view('tasks.edit', [
             'task' => $task,
         ]);
@@ -108,13 +115,17 @@ class TasksController extends Controller
         ]);
         // idの値でタスクを検索して取得
         $task = Task::findOrFail($id);
+        // ログインしているユーザーidとtaskのuseridが一致しない場合、トップページへリダイレクト
+        if (!(Auth::id() === $task->user_id)) {
+            return redirect()->route('tasks.index');
+        }
         // タスクを更新
+        $task->user_id = Auth::id();
         $task->content = $request->content;
         $task->status = $request->status;
         $task->save();
-
-        // トップページへリダイレクトさせる
-        return redirect('/');
+        // タスク一覧画面へリダイレクト
+        return redirect()->route('tasks.index');
     }
 
     /**
@@ -127,10 +138,15 @@ class TasksController extends Controller
     {
         // idの値でタスクを検索して取得
         $task = Task::findOrFail($id);
+        // ログインしているユーザーidとtaskのuseridが一致しない場合、トップページへリダイレクト
+        if (!(Auth::id() === $task->user_id)) {
+            return redirect()->route('tasks.index');
+        }
         // タスクを削除
         $task->delete();
-
-        // トップページへリダイレクトさせる
-        return redirect('/');
+        // タスク一覧画面へリダイレクト
+        // return redirect('/');
+        // return redirect('tasks');
+        return redirect()->route('tasks.index');
     }
 }
